@@ -1,0 +1,96 @@
+stages:
+  - build-image
+  - verify
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_BUILDKIT: "1"
+  USD_VERSION: "25.05.1"
+  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v25.05.01.tar.gz"
+
+.docker-auth:
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  after_script:
+    - docker logout "$CI_REGISTRY" || true
+
+build_alma9_image:
+  stage: build-image
+  tags:
+    - shell
+  extends: .docker-auth
+  rules:
+    - changes:
+        - docker/Dockerfile.alma9
+        - .gitlab-ci.yml
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:alma9" || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE:alma9" --build-arg USD_VERSION="$USD_VERSION" --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" -t "$CI_REGISTRY_IMAGE:alma9" -f docker/Dockerfile.alma9 .
+    - docker push "$CI_REGISTRY_IMAGE:alma9"
+
+build_rocky9_image:
+  stage: build-image
+  tags:
+    - shell
+  extends: .docker-auth
+  rules:
+    - when: never
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:rocky9" || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE:rocky9" --build-arg USD_VERSION="$USD_VERSION" --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" -t "$CI_REGISTRY_IMAGE:rocky9" -f docker/Dockerfile.rocky9 .
+    - docker push "$CI_REGISTRY_IMAGE:rocky9"
+
+build_usd_25051_alma9:
+  stage: verify
+  tags:
+    - shell
+  needs:
+    - build_alma9_image
+  rules:
+    - changes:
+        - docker/Dockerfile.alma9
+        - .gitlab-ci.yml
+  script:
+    - >
+      docker run --rm
+      -e USD_TARBALL_URL="$USD_TARBALL_URL"
+      "$CI_REGISTRY_IMAGE:alma9"
+      bash -lc '
+      set -euo pipefail
+      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
+      mkdir -p /tmp/OpenUSD
+      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
+      cmake -S /tmp/OpenUSD -B /tmp/OpenUSD/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DPXR_ENABLE_PYTHON_SUPPORT=ON \
+        -DPXR_BUILD_IMAGING=OFF \
+        -DPXR_BUILD_TESTS=OFF \
+        -DPXR_BUILD_EXAMPLES=OFF
+      cmake --build /tmp/OpenUSD/build --parallel
+      '
+
+verify_usd_configure_rocky9:
+  stage: verify
+  tags:
+    - shell
+  needs:
+    - build_rocky9_image
+  rules:
+    - when: never
+  script:
+    - >
+      docker run --rm
+      -e USD_TARBALL_URL="$USD_TARBALL_URL"
+      "$CI_REGISTRY_IMAGE:rocky9"
+      bash -lc '
+      set -euo pipefail
+      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
+      mkdir -p /tmp/OpenUSD
+      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
+      cmake -S /tmp/OpenUSD -B /tmp/OpenUSD/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DPXR_ENABLE_PYTHON_SUPPORT=ON \
+        -DPXR_BUILD_IMAGING=OFF \
+        -DPXR_BUILD_TESTS=OFF \
+        -DPXR_BUILD_EXAMPLES=OFF
+      '
