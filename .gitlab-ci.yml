@@ -53,43 +53,22 @@ build_rocky9_image:
 build_usd_25051_alma9:
   stage: verify
   tags:
-    - shell
+    - docker
+  image: $CI_REGISTRY_IMAGE:alma9
   needs:
     - job: build_alma9_image
       optional: true
   rules:
     - when: on_success
   script:
-    - |
-      ALMA9_IMAGE="$CI_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
-      docker pull "$ALMA9_IMAGE"
-      docker run --rm \
-        -e USD_TARBALL_URL="$USD_TARBALL_URL" \
-        -e PYTHON_VERSION="$PYTHON_VERSION" \
-        "$ALMA9_IMAGE" \
-        bash -lc '
-        set -euo pipefail
-        source /opt/rh/gcc-toolset-12/enable
-        gcc --version
-        g++ --version
-        /opt/python/${PYTHON_VERSION}/bin/python3.10 --version
-        curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
-        mkdir -p /tmp/OpenUSD
-        tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
-        /opt/python/${PYTHON_VERSION}/bin/python3.10 /tmp/OpenUSD/build_scripts/build_usd.py \
-          /tmp/OpenUSD/_install \
-          --src /tmp/OpenUSD/_src \
-          --build /tmp/OpenUSD/_build \
-          --inst /tmp/OpenUSD/_inst \
-          --build-variant release \
-          --python \
-          --usdview \
-          --no-tests \
-          --no-examples \
-          --no-tutorials \
-          --no-docs \
-          --no-python-docs
-        '
+    - source /opt/rh/gcc-toolset-12/enable
+    - gcc --version
+    - g++ --version
+    - /opt/python/${PYTHON_VERSION}/bin/python3.10 --version
+    - curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
+    - mkdir -p /tmp/OpenUSD
+    - tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
+    - /opt/python/${PYTHON_VERSION}/bin/python3.10 /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs
 
 verify_usd_configure_rocky9:
   stage: verify
