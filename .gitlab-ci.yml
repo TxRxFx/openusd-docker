@@ -9,14 +9,12 @@ variables:
   USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v25.05.01.tar.gz"
   PYTHON_VERSION: "3.10.14"
   ALMA9_IMAGE_TAG: "alma9"
-  # Use localhost for local runner access to registry
-  LOCAL_REGISTRY_IMAGE: "localhost:5050/external/modules/openusd"
 
 .docker-auth:
   before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin localhost:5050 || echo "Continuing without auth"
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   after_script:
-    - docker logout localhost:5050 || true
+    - docker logout "$CI_REGISTRY" || true
 
 build_alma9_image:
   stage: build-image
@@ -29,7 +27,7 @@ build_alma9_image:
         - .gitlab-ci.yml
   script:
     - |
-      ALMA9_IMAGE="$LOCAL_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
+      ALMA9_IMAGE="$CI_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
       docker pull "$ALMA9_IMAGE" || true
       docker build \
         --cache-from "$ALMA9_IMAGE" \
@@ -63,7 +61,7 @@ build_usd_25051_alma9:
     - when: on_success
   script:
     - |
-      ALMA9_IMAGE="$LOCAL_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
+      ALMA9_IMAGE="$CI_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
       docker pull "$ALMA9_IMAGE"
       docker run --rm \
         -e USD_TARBALL_URL="$USD_TARBALL_URL" \
