@@ -55,6 +55,7 @@ build_usd_25051_alma9:
   tags:
     - docker
   image: $CI_REGISTRY_IMAGE:alma9
+  timeout: 4h
   needs:
     - job: build_alma9_image
       optional: true
