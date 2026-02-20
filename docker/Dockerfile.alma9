@@ -79,6 +79,8 @@ RUN set -euxo pipefail; \
     ./configure --prefix="${PY310_PREFIX}" --enable-optimizations --enable-shared --with-ensurepip=install; \
     make -j"$(nproc)"; \
     make install; \
+    echo "${PY310_PREFIX}/lib" > /etc/ld.so.conf.d/python-${PYTHON_VERSION}.conf; \
+    ldconfig; \
     "${PY310_PREFIX}/bin/python3.10" -m pip install --no-cache-dir --upgrade pip setuptools wheel; \
     "${PY310_PREFIX}/bin/python3.10" -m pip install --no-cache-dir "Jinja2" "PySide6==6.5.2" "PyOpenGL"; \
     rm -rf /tmp/python-src
