@@ -21,6 +21,10 @@ RUN dnf -y install dnf-plugins-core && \
 RUN dnf -y update && \
     dnf -y groupinstall "Development Tools" && \
     dnf -y install --allowerasing --setopt=install_weak_deps=False \
+        gcc-toolset-12 \
+        gcc-toolset-12-gcc \
+        gcc-toolset-12-gcc-c++ \
+        gcc-toolset-12-binutils \
         cmake \
         ninja-build \
         git \
@@ -64,6 +68,7 @@ RUN dnf -y update && \
 
 # Install Python 3.10.14 from source and pin pip packages used by build_usd.py/usdview checks
 RUN set -euxo pipefail; \
+    source /opt/rh/gcc-toolset-12/enable; \
     mkdir -p /tmp/python-src; \
     curl -L "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" -o /tmp/python-src/Python.tgz; \
     tar -xzf /tmp/python-src/Python.tgz -C /tmp/python-src; \

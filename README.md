@@ -9,6 +9,7 @@ Source tarball used by CI smoke tests:
 ## What is included
 
 - Toolchain and build tools (`Development Tools`, `cmake`, `ninja-build`, `git`, `pkgconfig`)
+- Compiler toolchain pinned via `gcc-toolset-12` for GCC 12.x builds
 - Python runtime pinned to `3.10.14` (`/opt/python/3.10.14/bin/python3.10`)
 - Python packages for USD tooling: `PySide6==6.5.2`, `PyOpenGL`
 - Core USD dependencies (`tbb`, `boost`, `OpenEXR`, `OpenImageIO`, `zlib`, GL/X11 dev packages)
@@ -56,3 +57,5 @@ The pipeline in `.gitlab-ci.yml` performs:
 2. Run `build_scripts/build_usd.py` inside the Alma image using Python 3.10.4
 
 This validates that each image is suitable for OpenUSD source builds and removes all previous SimpleScreenRecorder/AppImage packaging steps.
+
+Note: Python 3.10.14 is intentionally compiled from source in the image build to guarantee the exact patch version on Alma 9.
