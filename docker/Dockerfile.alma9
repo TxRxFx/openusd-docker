@@ -76,11 +76,11 @@ RUN set -euxo pipefail; \
     curl -L "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" -o /tmp/python-src/Python.tgz; \
     tar -xzf /tmp/python-src/Python.tgz -C /tmp/python-src; \
     cd /tmp/python-src/Python-${PYTHON_VERSION}; \
-    ./configure --prefix="${PY310_PREFIX}" --enable-optimizations --with-ensurepip=install; \
+    ./configure --prefix="${PY310_PREFIX}" --enable-optimizations --enable-shared --with-ensurepip=install; \
     make -j"$(nproc)"; \
     make install; \
     "${PY310_PREFIX}/bin/python3.10" -m pip install --no-cache-dir --upgrade pip setuptools wheel; \
-    "${PY310_PREFIX}/bin/python3.10" -m pip install --no-cache-dir "PySide6==6.5.2" "PyOpenGL"; \
+    "${PY310_PREFIX}/bin/python3.10" -m pip install --no-cache-dir "Jinja2" "PySide6==6.5.2" "PyOpenGL"; \
     rm -rf /tmp/python-src
 
 WORKDIR /opt/src

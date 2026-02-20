@@ -60,6 +60,11 @@ build_usd_25051_alma9:
       optional: true
   rules:
     - when: on_success
+  artifacts:
+    paths:
+      - /tmp/OpenUSD/_build/
+      - /tmp/OpenUSD/_build/OpenUSD/log.txt
+    expire_in: 14 days
   script:
     - source /opt/rh/gcc-toolset-12/enable
     - gcc --version
