@@ -59,11 +59,14 @@ RUN dnf -y update && \
         mesa-libGL-devel \
         mesa-libGLU-devel \
         libX11-devel \
+        libXt-devel \
+        libXmu-devel \
         libXrandr-devel \
         libXcursor-devel \
         libXi-devel \
         libXinerama-devel \
-        libXxf86vm-devel && \
+        libXxf86vm-devel \
+        libxkbcommon-devel && \
     dnf clean all
 
 # Install Python 3.10.14 from source and pin pip packages used by build_usd.py/usdview checks
