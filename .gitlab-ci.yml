@@ -63,8 +63,7 @@ build_usd_25051_alma9:
     - when: on_success
   artifacts:
     paths:
-      - /tmp/OpenUSD/_build/
-      - /tmp/OpenUSD/_build/OpenUSD/log.txt
+      - artifacts/
     expire_in: 14 days
   script:
     - source /opt/rh/gcc-toolset-12/enable
@@ -75,6 +74,10 @@ build_usd_25051_alma9:
     - mkdir -p /tmp/OpenUSD
     - tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
     - /opt/python/${PYTHON_VERSION}/bin/python3.10 /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs
+    - mkdir -p "$CI_PROJECT_DIR/artifacts"
+    - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_install.tar.gz" _install
+    - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_build.tar.gz" _build
+    - if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$CI_PROJECT_DIR/artifacts/log.txt"; fi
 
 verify_usd_configure_rocky9:
   stage: verify
