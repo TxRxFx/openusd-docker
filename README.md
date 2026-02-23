@@ -10,7 +10,8 @@ Source tarball used by CI smoke tests:
 
 - Toolchain and build tools (`Development Tools`, `cmake`, `ninja-build`, `git`, `pkgconfig`)
 - Compiler toolchain pinned via `gcc-toolset-12` for GCC 12.x builds
-- Python runtime pinned to `3.10.14` (`/opt/python/3.10.14/bin/python3.10`)
+- Python runtime pinned to `3.10.14` and compiled from source into `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0`
+- USD build Python executable path: `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0/bin/python`
 - Python packages for USD tooling: `PySide6==6.5.2`, `PyOpenGL`
 - Core USD dependencies (`tbb`, `boost`, `OpenEXR`, `OpenImageIO`, `zlib`, GL/X11 dev packages)
 - Hydra rendering support (OpenGL, X11 Toolkit, Mesa)
@@ -56,8 +57,9 @@ docker run --rm -it openusd:alma9 bash -lc '
 The pipeline in `.gitlab-ci.yml` performs:
 
 1. Build and push `alma9` and `rocky9` images to `$CI_REGISTRY_IMAGE`
-2. Run `build_scripts/build_usd.py` inside the Alma image using Python 3.10.14 with USDview and Hydra enabled
+2. Compile Python 3.10.14 from source in the Alma image at `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0`
+3. Run `build_scripts/build_usd.py` inside the Alma image using `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0/bin/python` with USDview and Hydra enabled
 
 This validates that each image is suitable for OpenUSD source builds and removes all previous SimpleScreenRecorder/AppImage packaging steps.
 
-Note: Python 3.10.14 is intentionally compiled from source in the image build to guarantee the exact patch version on Alma 9.
+Note: Python 3.10.14 is intentionally compiled from source and installed in the fixed pipeline prefix so OpenUSD builds can reliably refer to a stable interpreter path across CI jobs.
