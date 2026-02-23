@@ -1,6 +1,6 @@
 stages:
   - build-image
-  - verify
+  - compile
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -15,9 +15,12 @@ variables:
 
 .docker-auth:
   before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - export DOCKER_CONFIG="$CI_PROJECT_DIR/.docker-ci"
+    - mkdir -p "$DOCKER_CONFIG"
+    - REGISTRY_AUTH="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}' "$CI_REGISTRY" "$REGISTRY_AUTH" > "$DOCKER_CONFIG/config.json"
   after_script:
-    - docker logout "$CI_REGISTRY" || true
+    - rm -rf "$CI_PROJECT_DIR/.docker-ci"
 
 build_alma9_image:
   stage: build-image
@@ -55,7 +58,7 @@ build_rocky9_image:
     - docker push "$CI_REGISTRY_IMAGE:rocky9"
 
 build_usd_25051_alma9:
-  stage: verify
+  stage: compile
   tags:
     - docker
   image: $CI_REGISTRY_IMAGE:alma9
@@ -84,8 +87,8 @@ build_usd_25051_alma9:
     - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_build.tar.gz" _build
     - if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$CI_PROJECT_DIR/artifacts/log.txt"; fi
 
-verify_usd_configure_rocky9:
-  stage: verify
+compile_usd_configure_rocky9:
+  stage: compile
   tags:
     - shell
   needs:
