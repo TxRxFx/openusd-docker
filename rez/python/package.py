@@ -8,7 +8,6 @@ variants = [
 
 
 def commands():
-    import os
     root = "{root}"
     env.PATH.prepend("{}/bin".format(root))
     env.LD_LIBRARY_PATH.prepend("{}/lib".format(root))
