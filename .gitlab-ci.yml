@@ -32,9 +32,6 @@ build_alma9_image:
       changes:
         - docker/Dockerfile.alma9
         - .gitlab-ci.yml
-    - changes:
-        - docker/Dockerfile.alma9
-        - .gitlab-ci.yml
   script:
     - |
       ALMA9_IMAGE="$CI_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
