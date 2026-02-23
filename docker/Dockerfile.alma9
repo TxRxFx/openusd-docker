@@ -39,6 +39,8 @@ RUN dnf -y update && \
         bzip2 \
         patch \
         pkgconfig \
+        doxygen \
+        graphviz \
         openssl-devel \
         libffi-devel \
         bzip2-devel \
