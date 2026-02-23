@@ -57,6 +57,7 @@ RUN dnf -y update && \
         zlib-devel \
         libpng-devel \
         libjpeg-turbo-devel \
+        turbojpeg-devel \
         libtiff-devel \
         OpenEXR-devel \
         OpenImageIO-devel \
