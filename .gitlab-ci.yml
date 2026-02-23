@@ -86,7 +86,7 @@ build_usd_25051_alma9:
     - curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
     - mkdir -p /tmp/OpenUSD
     - tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
-    - '"$PYTHON_BIN" /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usd-imaging --usdview --tests --examples --tutorials --docs --python-docs --materialx --embree'
+    - '"$PYTHON_BIN" /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usd-imaging --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs --materialx --embree'
     - test -d /tmp/OpenUSD/_inst/include/opensubdiv
     - mkdir -p /tmp/OpenUSD/_artifacts/OpenSubdiv/include /tmp/OpenUSD/_artifacts/OpenSubdiv/lib
     - cp -a /tmp/OpenUSD/_inst/include/opensubdiv /tmp/OpenUSD/_artifacts/OpenSubdiv/include/
