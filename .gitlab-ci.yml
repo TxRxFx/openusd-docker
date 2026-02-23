@@ -1,0 +1,114 @@
+stages:
+  - build-image
+  - compile
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_BUILDKIT: "1"
+  USD_VERSION: "25.05.1"
+  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v25.05.01.tar.gz"
+  PYTHON_VERSION: "3.10.14"
+  GCCCORE_VERSION: "12.3.0"
+  PYTHON_PREFIX: "/pipeline/el9/software/Python/${PYTHON_VERSION}-GCCcore-${GCCCORE_VERSION}"
+  PYTHON_BIN: "${PYTHON_PREFIX}/bin/python"
+  ALMA9_IMAGE_TAG: "alma9"
+
+.docker-auth:
+  before_script:
+    - export DOCKER_CONFIG="$CI_PROJECT_DIR/.docker-ci"
+    - mkdir -p "$DOCKER_CONFIG"
+    - REGISTRY_AUTH="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}' "$CI_REGISTRY" "$REGISTRY_AUTH" > "$DOCKER_CONFIG/config.json"
+  after_script:
+    - rm -rf "$CI_PROJECT_DIR/.docker-ci"
+
+build_alma9_image:
+  stage: build-image
+  tags:
+    - shell
+  extends: .docker-auth
+  rules:
+    - changes:
+        - docker/Dockerfile.alma9
+        - .gitlab-ci.yml
+  script:
+    - |
+      ALMA9_IMAGE="$CI_REGISTRY_IMAGE:${ALMA9_IMAGE_TAG}"
+      docker pull "$ALMA9_IMAGE" || true
+      docker build \
+        --cache-from "$ALMA9_IMAGE" \
+        --build-arg USD_VERSION="$USD_VERSION" \
+        --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" \
+        --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
+        --build-arg GCCCORE_VERSION="$GCCCORE_VERSION" \
+        -t "$ALMA9_IMAGE" \
+        -f docker/Dockerfile.alma9 .
+      docker push "$ALMA9_IMAGE"
+
+build_rocky9_image:
+  stage: build-image
+  tags:
+    - shell
+  extends: .docker-auth
+  rules:
+    - when: never
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:rocky9" || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE:rocky9" --build-arg USD_VERSION="$USD_VERSION" --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" -t "$CI_REGISTRY_IMAGE:rocky9" -f docker/Dockerfile.rocky9 .
+    - docker push "$CI_REGISTRY_IMAGE:rocky9"
+
+build_usd_25051_alma9:
+  stage: compile
+  tags:
+    - docker
+  image: $CI_REGISTRY_IMAGE:alma9
+  timeout: 4h
+  needs:
+    - job: build_alma9_image
+      optional: true
+  rules:
+    - when: on_success
+  artifacts:
+    paths:
+      - artifacts/
+    expire_in: 14 days
+  script:
+    - source /opt/rh/gcc-toolset-12/enable
+    - gcc --version
+    - g++ --version
+    - test -x "$PYTHON_BIN"
+    - '"$PYTHON_BIN" --version'
+    - curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
+    - mkdir -p /tmp/OpenUSD
+    - tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
+    - '"$PYTHON_BIN" /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs'
+    - mkdir -p "$CI_PROJECT_DIR/artifacts"
+    - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_install.tar.gz" _install
+    - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_build.tar.gz" _build
+    - if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$CI_PROJECT_DIR/artifacts/log.txt"; fi
+
+compile_usd_configure_rocky9:
+  stage: compile
+  tags:
+    - shell
+  needs:
+    - build_rocky9_image
+  rules:
+    - when: never
+  script:
+    - >
+      docker run --rm
+      -e USD_TARBALL_URL="$USD_TARBALL_URL"
+      "$CI_REGISTRY_IMAGE:rocky9"
+      bash -lc '
+      set -euo pipefail
+      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
+      mkdir -p /tmp/OpenUSD
+      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
+      cmake -S /tmp/OpenUSD -B /tmp/OpenUSD/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DPXR_ENABLE_PYTHON_SUPPORT=ON \
+        -DPXR_BUILD_IMAGING=OFF \
+        -DPXR_BUILD_TESTS=OFF \
+        -DPXR_BUILD_EXAMPLES=OFF
+      '
