@@ -49,19 +49,7 @@ build_alma9_image:
         -f docker/Dockerfile.alma9 .
       docker push "$ALMA9_IMAGE"
 
-build_rocky9_image:
-  stage: build-image
-  tags:
-    - shell
-  extends: .docker-auth
-  rules:
-    - when: never
-  script:
-    - docker pull "$CI_REGISTRY_IMAGE:rocky9" || true
-    - docker build --cache-from "$CI_REGISTRY_IMAGE:rocky9" --build-arg USD_VERSION="$USD_VERSION" --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" -t "$CI_REGISTRY_IMAGE:rocky9" -f docker/Dockerfile.rocky9 .
-    - docker push "$CI_REGISTRY_IMAGE:rocky9"
-
-build_usd_25051_alma9:
+build_usd_alma9:
   stage: compile
   tags:
     - docker
@@ -104,29 +92,3 @@ build_usd_25051_alma9:
     - tar -C /tmp/OpenUSD -czf "$CI_PROJECT_DIR/artifacts/OpenUSD_3rdparty_inst.tar.gz" _inst
     - tar -C /tmp/OpenUSD/_artifacts -czf "$CI_PROJECT_DIR/artifacts/OpenSubdiv.tar.gz" OpenSubdiv
     - if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$CI_PROJECT_DIR/artifacts/log.txt"; fi
-
-compile_usd_configure_rocky9:
-  stage: compile
-  tags:
-    - shell
-  needs:
-    - build_rocky9_image
-  rules:
-    - when: never
-  script:
-    - >
-      docker run --rm
-      -e USD_TARBALL_URL="$USD_TARBALL_URL"
-      "$CI_REGISTRY_IMAGE:rocky9"
-      bash -lc '
-      set -euo pipefail
-      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
-      mkdir -p /tmp/OpenUSD
-      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
-      cmake -S /tmp/OpenUSD -B /tmp/OpenUSD/build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DPXR_ENABLE_PYTHON_SUPPORT=ON \
-        -DPXR_BUILD_IMAGING=OFF \
-        -DPXR_BUILD_TESTS=OFF \
-        -DPXR_BUILD_EXAMPLES=OFF
-      '
