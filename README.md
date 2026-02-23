@@ -23,6 +23,13 @@ Source tarball used by CI smoke tests:
 - `docker/Dockerfile.alma9`
 - `docker/Dockerfile.rocky9`
 
+## Rez package definitions
+
+- `rez/python/package.py`
+- `rez/openusd/package.py`
+
+Both package definitions support OS variants for `os-alma9` and `os-rocky9`.
+
 ## Local usage
 
 Build Alma 9 image:
@@ -57,9 +64,23 @@ docker run --rm -it openusd:alma9 bash -lc '
 The pipeline in `.gitlab-ci.yml` performs:
 
 1. Build and push `alma9` and `rocky9` images to `$CI_REGISTRY_IMAGE`
-2. Compile Python 3.10.14 from source in the Alma image at `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0`
-3. Run `build_scripts/build_usd.py` inside the Alma image using `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0/bin/python` with USDview and Hydra enabled
+2. Compile OpenUSD in both Alma 9 and Rocky 9 images using source-built Python at `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0/bin/python`
+3. Publish downloadable artifacts per OS, including compiled Python tarballs and OpenUSD install/build tarballs
+4. Generate Rez package payloads for `python` and `openusd` with Alma/Rocky OS variant layout
+5. Deploy Rez packages via a shell-runner deploy stage to `$REZ_DEPLOY_ROOT` (default `/pipeline/el9/rez-packages`)
 
 This validates that each image is suitable for OpenUSD source builds and removes all previous SimpleScreenRecorder/AppImage packaging steps.
 
 Note: Python 3.10.14 is intentionally compiled from source and installed in the fixed pipeline prefix so OpenUSD builds can reliably refer to a stable interpreter path across CI jobs.
+
+## Artifact output layout
+
+Compile jobs emit artifacts under `artifacts/alma9` and `artifacts/rocky9`:
+
+- `Python_<version>_<os>.tar.gz`
+- `OpenUSD_install_<version>_<os>.tar.gz`
+- `OpenUSD_build_<version>_<os>.tar.gz`
+- `rez/python/<python-version>/...`
+- `rez/openusd/<usd-version>/...`
+
+The deploy stage merges these into the Rez repository at `$REZ_DEPLOY_ROOT`.
