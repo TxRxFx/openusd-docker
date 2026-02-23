@@ -5,8 +5,8 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_BUILDKIT: "1"
-  USD_VERSION: "25.05.1"
-  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v25.05.01.tar.gz"
+  USD_VERSION: "${CI_COMMIT_BRANCH}"
+  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${CI_COMMIT_BRANCH}.tar.gz"
   PYTHON_VERSION: "3.10.14"
   GCCCORE_VERSION: "12.3.0"
   PYTHON_PREFIX: "/pipeline/el9/software/Python/${PYTHON_VERSION}-GCCcore-${GCCCORE_VERSION}"
@@ -28,6 +28,10 @@ build_alma9_image:
     - shell
   extends: .docker-auth
   rules:
+    - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
+      changes:
+        - docker/Dockerfile.alma9
+        - .gitlab-ci.yml
     - changes:
         - docker/Dockerfile.alma9
         - .gitlab-ci.yml
@@ -67,6 +71,7 @@ build_usd_25051_alma9:
     - job: build_alma9_image
       optional: true
   rules:
+    - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
     - when: on_success
   artifacts:
     paths:
