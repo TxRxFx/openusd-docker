@@ -91,6 +91,15 @@ RUN set -euxo pipefail; \
     "${PY310_PREFIX}/bin/python" -m pip install --no-cache-dir "Jinja2" "PySide6==6.5.2" "PyOpenGL"; \
     rm -rf /tmp/python-src
 
+# Install CMake version required by OpenUSD 26.08
+ARG CMAKE_VERSION=3.31.10
+
+RUN "${PY310_PREFIX}/bin/python" -m pip install \
+        --no-cache-dir "cmake==${CMAKE_VERSION}" && \
+    test -x "${PY310_PREFIX}/bin/cmake" && \
+    "${PY310_PREFIX}/bin/cmake" --version && \
+    command -v cmake    
+
 WORKDIR /opt/src
 
 CMD ["/bin/bash"]
