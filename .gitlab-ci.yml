@@ -51,8 +51,8 @@ build_image:
     matrix:
       - IMAGE_TAG: "alma9"
         DOCKERFILE: "docker/Dockerfile.alma9"
-      - IMAGE_TAG: "rocky9"
-        DOCKERFILE: "docker/Dockerfile.rocky9"
+      # - IMAGE_TAG: "rocky9"
+      #   DOCKERFILE: "docker/Dockerfile.rocky9"
 
 .compile-template:
   stage: compile
@@ -100,4 +100,4 @@ build_usd:
   parallel:
     matrix:
       - IMAGE_TAG: "alma9"
-      - IMAGE_TAG: "rocky9"
+      # - IMAGE_TAG: "rocky9"

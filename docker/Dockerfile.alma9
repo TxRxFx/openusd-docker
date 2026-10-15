@@ -1,8 +1,8 @@
 # Use specific version tag to prevent unnecessary cache invalidation
 FROM quay.io/almalinuxorg/9-base:9.5
 
-ARG USD_VERSION=25.08
-ARG USD_TARBALL_URL=https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v25.08.zip
+ARG USD_VERSION=26.08
+ARG USD_TARBALL_URL=https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v26.08.tar.gz
 ARG PYTHON_VERSION=3.10.14
 ARG GCCCORE_VERSION=12.3.0
 
