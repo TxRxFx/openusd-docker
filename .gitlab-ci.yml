@@ -59,6 +59,7 @@ build_image:
   stage: compile
   tags:
     - docker
+    - linux
   timeout: 4h
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
