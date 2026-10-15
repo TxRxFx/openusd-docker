@@ -29,9 +29,9 @@ variables:
   extends: .docker-auth
   rules:
     - if: '$CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}(\.\d+)?$/'
-      changes:
-        - docker/Dockerfile.*
-        - .gitlab-ci.yml
+      # changes:
+      #   - docker/Dockerfile.*
+      #   - .gitlab-ci.yml
   script:
     - |
       IMAGE="$CI_REGISTRY_IMAGE:${IMAGE_TAG}"
