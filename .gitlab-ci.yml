@@ -25,6 +25,7 @@ variables:
   stage: build-image
   tags:
     - shell
+    - linux
   extends: .docker-auth
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
