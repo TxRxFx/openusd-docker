@@ -13,6 +13,7 @@ compile_usd:
   stage: compile
   tags:
     - docker
+    - linux
 
   image: "${CI_REGISTRY_IMAGE}:${PLATFORM}-py${PYTHON_VERSION}-v${DOCKER_CONTAINER_VER}"
 
