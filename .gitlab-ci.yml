@@ -1,3 +1,12 @@
+# This is purely to not make this run on gitlab.com
+workflow:
+  rules:
+    - if: '$CI_SERVER_HOST == "gitlab.com"'
+      when: never
+    - when: always
+# End of gitlab.com check
+
+
 stages:
   - build-image
 
