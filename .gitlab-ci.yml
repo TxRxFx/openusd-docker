@@ -1,5 +1,4 @@
 stages:
-  - build-image
   - compile
   - deploy
 
@@ -7,185 +6,74 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_BUILDKIT: "1"
   USD_VERSION: "${CI_COMMIT_BRANCH}"
-  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${CI_COMMIT_BRANCH}.tar.gz"
   PYTHON_VERSION: "3.10.14"
   GCCCORE_VERSION: "12.3.0"
-  PYTHON_PREFIX: "/pipeline/el9/software/Python/${PYTHON_VERSION}-GCCcore-${GCCCORE_VERSION}"
-  PYTHON_BIN: "${PYTHON_PREFIX}/bin/python"
-  ALMA9_IMAGE_TAG: "alma9"
-  ROCKY9_IMAGE_TAG: "rocky9"
   REZ_DEPLOY_ROOT: "/pipeline/el9/rez-packages"
+  BUILD_SCRIPT: "scripts/build-openusd.sh"
 
-.docker-auth:
-  before_script:
-    - export DOCKER_CONFIG="$CI_PROJECT_DIR/.docker-ci"
-    - mkdir -p "$DOCKER_CONFIG"
-    - REGISTRY_AUTH="$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
-    - printf '{"auths":{"%s":{"auth":"%s"}}}' "$CI_REGISTRY" "$REGISTRY_AUTH" > "$DOCKER_CONFIG/config.json"
-  after_script:
-    - rm -rf "$CI_PROJECT_DIR/.docker-ci"
-
-.build-image-template:
-  stage: build-image
+# Build OpenUSD for both platforms
+compile_usd:
+  stage: compile
   tags:
-    - shell
-  extends: .docker-auth
+    - docker
+  timeout: 4h
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
-      changes:
-        - docker/Dockerfile.*
-        - .gitlab-ci.yml
-  script:
-    - |
-      IMAGE="$CI_REGISTRY_IMAGE:${IMAGE_TAG}"
-      docker pull "$IMAGE" || true
-      docker build \
-        --cache-from "$IMAGE" \
-        --build-arg USD_VERSION="$USD_VERSION" \
-        --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" \
-        --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
-        --build-arg GCCCORE_VERSION="$GCCCORE_VERSION" \
-        -t "$IMAGE" \
-        -f "$DOCKERFILE" .
-      docker push "$IMAGE"
-
-build_rocky9_image:
-  stage: build-image
-  tags:
-    - shell
-  extends: .docker-auth
-  rules:
-    - changes:
-        - docker/Dockerfile.rocky9
-        - .gitlab-ci.yml
-  script:
-    - |
-      ROCKY9_IMAGE="$CI_REGISTRY_IMAGE:${ROCKY9_IMAGE_TAG}"
-      docker pull "$ROCKY9_IMAGE" || true
-      docker build \
-        --cache-from "$ROCKY9_IMAGE" \
-        --build-arg USD_VERSION="$USD_VERSION" \
-        --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" \
-        --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
-        --build-arg GCCCORE_VERSION="$GCCCORE_VERSION" \
-        -t "$ROCKY9_IMAGE" \
-        -f docker/Dockerfile.rocky9 .
-      docker push "$ROCKY9_IMAGE"
-
-compile_usd_25051_alma9:
-  stage: compile
-  tags:
-    - docker
-  image: $CI_REGISTRY_IMAGE:alma9
-  timeout: 4h
-  needs:
-    - job: build_alma9_image
-      optional: true
-  rules:
-    - when: on_success
   artifacts:
     paths:
       - artifacts/
     expire_in: 14 days
+  parallel:
+    matrix:
+      - PLATFORM: [alma9, rocky9]
   script:
     - |
       set -euo pipefail
-      source /opt/rh/gcc-toolset-12/enable
-      gcc --version
-      g++ --version
-      test -x "$PYTHON_BIN"
-      "$PYTHON_BIN" --version
+      
+      # Call unified build script
+      "$BUILD_SCRIPT" \
+        --platform "$PLATFORM" \
+        --version "$USD_VERSION" \
+        --output "artifacts"
+      
+      # Report results
+      echo "Build completed for platform: $PLATFORM"
+      test -d "artifacts/$PLATFORM/rez" || exit 1
 
-      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
-      mkdir -p /tmp/OpenUSD
-      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
-      "$PYTHON_BIN" /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs
-
-      ARTIFACT_ROOT="$CI_PROJECT_DIR/artifacts/alma9"
-      mkdir -p "$ARTIFACT_ROOT"
-      tar -C / -czf "$ARTIFACT_ROOT/Python_${PYTHON_VERSION}_alma9.tar.gz" "${PYTHON_PREFIX#/}"
-      tar -C /tmp/OpenUSD -czf "$ARTIFACT_ROOT/OpenUSD_install_${USD_VERSION}_alma9.tar.gz" _install
-      tar -C /tmp/OpenUSD -czf "$ARTIFACT_ROOT/OpenUSD_build_${USD_VERSION}_alma9.tar.gz" _build
-      if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$ARTIFACT_ROOT/log.txt"; fi
-
-      PY_REZ_ROOT="$ARTIFACT_ROOT/rez/python/$PYTHON_VERSION"
-      USD_REZ_ROOT="$ARTIFACT_ROOT/rez/openusd/$USD_VERSION"
-      mkdir -p "$PY_REZ_ROOT/alma9" "$USD_REZ_ROOT/alma9"
-      cp -f "$CI_PROJECT_DIR/rez/python/package.py" "$PY_REZ_ROOT/package.py"
-      cp -f "$CI_PROJECT_DIR/rez/openusd/package.py" "$USD_REZ_ROOT/package.py"
-      cp -a "$PYTHON_PREFIX"/. "$PY_REZ_ROOT/alma9/"
-      cp -a /tmp/OpenUSD/_install/. "$USD_REZ_ROOT/alma9/"
-
-compile_usd_25051_rocky9:
-  stage: compile
-  tags:
-    - docker
-  image: $CI_REGISTRY_IMAGE:rocky9
-  timeout: 4h
-  needs:
-    - job: build_rocky9_image
-      optional: true
-  rules:
-    - when: on_success
-  artifacts:
-    paths:
-      - artifacts/
-    expire_in: 14 days
-  script:
-    - |
-      set -euo pipefail
-      source /opt/rh/gcc-toolset-12/enable
-      gcc --version
-      g++ --version
-      test -x "$PYTHON_BIN"
-      "$PYTHON_BIN" --version
-
-      curl -L "$USD_TARBALL_URL" -o /tmp/OpenUSD.tar.gz
-      mkdir -p /tmp/OpenUSD
-      tar -xzf /tmp/OpenUSD.tar.gz --strip-components=1 -C /tmp/OpenUSD
-      "$PYTHON_BIN" /tmp/OpenUSD/build_scripts/build_usd.py /tmp/OpenUSD/_install --src /tmp/OpenUSD/_src --build /tmp/OpenUSD/_build --inst /tmp/OpenUSD/_inst --build-variant release --python --usdview --no-tests --no-examples --no-tutorials --no-docs --no-python-docs
-
-      ARTIFACT_ROOT="$CI_PROJECT_DIR/artifacts/rocky9"
-      mkdir -p "$ARTIFACT_ROOT"
-      tar -C / -czf "$ARTIFACT_ROOT/Python_${PYTHON_VERSION}_rocky9.tar.gz" "${PYTHON_PREFIX#/}"
-      tar -C /tmp/OpenUSD -czf "$ARTIFACT_ROOT/OpenUSD_install_${USD_VERSION}_rocky9.tar.gz" _install
-      tar -C /tmp/OpenUSD -czf "$ARTIFACT_ROOT/OpenUSD_build_${USD_VERSION}_rocky9.tar.gz" _build
-      if [ -f /tmp/OpenUSD/_build/OpenUSD/log.txt ]; then cp /tmp/OpenUSD/_build/OpenUSD/log.txt "$ARTIFACT_ROOT/log.txt"; fi
-
-      PY_REZ_ROOT="$ARTIFACT_ROOT/rez/python/$PYTHON_VERSION"
-      USD_REZ_ROOT="$ARTIFACT_ROOT/rez/openusd/$USD_VERSION"
-      mkdir -p "$PY_REZ_ROOT/rocky9" "$USD_REZ_ROOT/rocky9"
-      cp -f "$CI_PROJECT_DIR/rez/python/package.py" "$PY_REZ_ROOT/package.py"
-      cp -f "$CI_PROJECT_DIR/rez/openusd/package.py" "$USD_REZ_ROOT/package.py"
-      cp -a "$PYTHON_PREFIX"/. "$PY_REZ_ROOT/rocky9/"
-      cp -a /tmp/OpenUSD/_install/. "$USD_REZ_ROOT/rocky9/"
-
+# Deploy Rez packages to shared location
 deploy_rez_packages:
   stage: deploy
   tags:
     - shell
   needs:
-    - job: compile_usd_25051_alma9
-      artifacts: true
-    - job: compile_usd_25051_rocky9
+    - job: compile_usd
       artifacts: true
   rules:
     - when: on_success
   script:
     - |
       set -euo pipefail
-      test -d "$CI_PROJECT_DIR/artifacts/alma9/rez"
-      test -d "$CI_PROJECT_DIR/artifacts/rocky9/rez"
-
+      
+      # Verify compiled artifacts exist for both platforms
+      test -d "artifacts/alma9/rez" || { echo "ERROR: Missing alma9 Rez packages"; exit 1; }
+      test -d "artifacts/rocky9/rez" || { echo "ERROR: Missing rocky9 Rez packages"; exit 1; }
+      
+      # Create deployment directories
       mkdir -p "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION"
-
-      cp -f "$CI_PROJECT_DIR/artifacts/alma9/rez/python/$PYTHON_VERSION/package.py" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/package.py"
-      cp -f "$CI_PROJECT_DIR/artifacts/alma9/rez/openusd/$USD_VERSION/package.py" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/package.py"
-
+      
+      # Deploy Python packages
+      cp -f "artifacts/alma9/rez/python/$PYTHON_VERSION/package.py" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/package.py"
+      
+      # Deploy OpenUSD packages
+      cp -f "artifacts/alma9/rez/openusd/$USD_VERSION/package.py" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/package.py"
+      
+      # Clean and update platform-specific installations
       rm -rf "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/alma9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/rocky9"
       rm -rf "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/alma9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/rocky9"
-
-      cp -a "$CI_PROJECT_DIR/artifacts/alma9/rez/python/$PYTHON_VERSION/alma9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
-      cp -a "$CI_PROJECT_DIR/artifacts/rocky9/rez/python/$PYTHON_VERSION/rocky9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
-      cp -a "$CI_PROJECT_DIR/artifacts/alma9/rez/openusd/$USD_VERSION/alma9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
-      cp -a "$CI_PROJECT_DIR/artifacts/rocky9/rez/openusd/$USD_VERSION/rocky9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
+      
+      cp -a "artifacts/alma9/rez/python/$PYTHON_VERSION/alma9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
+      cp -a "artifacts/rocky9/rez/python/$PYTHON_VERSION/rocky9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
+      cp -a "artifacts/alma9/rez/openusd/$USD_VERSION/alma9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
+      cp -a "artifacts/rocky9/rez/openusd/$USD_VERSION/rocky9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
+      
+      echo "Rez packages deployed to $REZ_DEPLOY_ROOT"
