@@ -33,6 +33,7 @@ compile_usd:
       set -euo pipefail
       
       # Call unified build script
+      chmod +x "$BUILD_SCRIPT"
       "$BUILD_SCRIPT" \
         --platform "$PLATFORM" \
         --version "$USD_VERSION" \
