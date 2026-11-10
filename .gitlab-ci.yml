@@ -37,7 +37,7 @@ variables:
   script:
     - |
       IMAGE="$CI_REGISTRY_IMAGE:${IMAGE_TAG}"
-      docker pull "$IMAGE" || true
+      docker pull "$IMAGE"
       docker build \
         --cache-from "$IMAGE" \
         --build-arg USD_VERSION="$USD_VERSION" \
