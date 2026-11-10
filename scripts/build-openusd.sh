@@ -26,8 +26,8 @@ trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/source"
 curl -fL --retry 3 \
   "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${VERSION}.tar.gz" \
-gs/v${VERSION}.tar.gz" \
-xzf "$WORK/OpenUSD.tar.gz" --strip-components=1 -C "$WORK/source"
+  -o "$WORK/OpenUSD.tar.gz"
+tar -xzf "$WORK/OpenUSD.tar.gz" --strip-components=1 -C "$WORK/source"
 
 "$PYTHON_BIN" "$WORK/source/build_scripts/build_usd.py" \
   "$WORK/_install" \
