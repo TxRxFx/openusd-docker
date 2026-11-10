@@ -39,6 +39,8 @@ RUN dnf -y update && \
         bzip2 \
         patch \
         pkgconfig \
+        doxygen \
+        graphviz \
         openssl-devel \
         libffi-devel \
         bzip2-devel \
@@ -55,6 +57,7 @@ RUN dnf -y update && \
         zlib-devel \
         libpng-devel \
         libjpeg-turbo-devel \
+        turbojpeg-devel \
         libtiff-devel \
         OpenEXR-devel \
         OpenImageIO-devel \
