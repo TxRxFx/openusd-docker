@@ -5,8 +5,8 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_BUILDKIT: "1"
-  USD_VERSION: "${CI_COMMIT_BRANCH}"
-  USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${CI_COMMIT_BRANCH}.tar.gz"
+  # USD_VERSION: "${CI_COMMIT_BRANCH}"
+  # USD_TARBALL_URL: "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${CI_COMMIT_BRANCH}.tar.gz"
   PYTHON_VERSION: "3.10.14"
   GCCCORE_VERSION: "12.3.0"
   PYTHON_PREFIX: "/pipeline/el9/software/Python/${PYTHON_VERSION}-GCCcore-${GCCCORE_VERSION}"
@@ -28,20 +28,21 @@ variables:
   stage: build-image
   tags:
     - shell
+    - linux
   extends: .docker-auth
   rules:
-    - if: $CI_COMMIT_BRANCH =~ "docker"
+    - if: $CI_COMMIT_BRANCH == "docker"
       changes:
         - docker/Dockerfile.*
         - .gitlab-ci.yml
   script:
     - |
-      IMAGE="$CI_REGISTRY_IMAGE:${IMAGE_TAG}"
+      IMAGE="${CI_REGISTRY_IMAGE}:${IMAGE_TAG}-py${PYTHON_VERSION}-v${DOCKER_CONTAINER_VER}"
       docker pull "$IMAGE"
       docker build \
         --cache-from "$IMAGE" \
-        --build-arg USD_VERSION="$USD_VERSION" \
-        --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" \
+        # --build-arg USD_VERSION="$USD_VERSION" \
+        # --build-arg USD_TARBALL_URL="$USD_TARBALL_URL" \
         --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
         --build-arg GCCCORE_VERSION="$GCCCORE_VERSION" \
         -t "$IMAGE" \
@@ -49,6 +50,8 @@ variables:
       docker push "$IMAGE"
 
 # Execute docker container builds in parallel
+# Be aware this docker file also builds Python from source
+# and houses it within the container.
 build_image:
   extends: .build-image-template
   parallel:
