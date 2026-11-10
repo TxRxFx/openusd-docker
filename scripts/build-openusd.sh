@@ -23,9 +23,6 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-echo "**********"
-echo "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${VERSION}.tar.gz"
-echo "**********"
 
 
 mkdir -p "$WORK/source"
