@@ -53,8 +53,8 @@ build_image:
   extends: .build-image-template
   parallel:
     matrix:
-      - IMAGE_TAG: "alma9:${DOCKER_CONTAINER_VER}"
+      - IMAGE_TAG: "alma9"
         DOCKERFILE: "docker/Dockerfile.alma9"
       - IMAGE_TAG: "rocky9"
-        DOCKERFILE: "docker/Dockerfile.rocky9:${DOCKER_CONTAINER_VER}"
+        DOCKERFILE: "docker/Dockerfile.rocky9"
 
