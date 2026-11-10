@@ -23,16 +23,19 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-echo "** Downloading openUSD v${VERSION} **"
+echo "** Downloading openUSD v${VERSION} source code **"
 mkdir -p "$WORK/source"
 curl -fL --retry 3 \
   "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${VERSION}.tar.gz" \
   -o "$WORK/OpenUSD.tar.gz"
 
-echo "** Extracting openUSD v${VERSION} **"
+echo "** Extracting openUSD v${VERSION} source code **"
 tar -xzf "$WORK/OpenUSD.tar.gz" --strip-components=1 -C "$WORK/source"
 
-echo "** Building openUSD v${VERSION} **"
+echo "** Building openUSD v${VERSION} from source code **"
+echo "** This may take some time... **"
+
+# Execute pxr's build script with set params
 "$PYTHON_BIN" "$WORK/source/build_scripts/build_usd.py" \
   "$WORK/_install" \
   --src "$WORK/_src" --build "$WORK/_build" --inst "$WORK/_inst" \
