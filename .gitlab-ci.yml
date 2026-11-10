@@ -1,83 +1,48 @@
+
 stages:
   - compile
-  - deploy
 
 variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_BUILDKIT: "1"
   USD_VERSION: "${CI_COMMIT_BRANCH}"
   PYTHON_VERSION: "3.10.14"
   GCCCORE_VERSION: "12.3.0"
-  REZ_DEPLOY_ROOT: "/pipeline/el9/rez-packages"
+  DOCKER_CONTAINER_VER: "1"
   BUILD_SCRIPT: "scripts/build-openusd.sh"
 
-# Build OpenUSD for both platforms
 compile_usd:
   stage: compile
   tags:
     - docker
+
+  image: "${CI_REGISTRY_IMAGE}:${PLATFORM}-py${PYTHON_VERSION}-v${DOCKER_CONTAINER_VER}"
+
   timeout: 4h
+
   rules:
-    - if: $CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/
+    - if: '$CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/'
+
+  parallel:
+    matrix:
+      - PLATFORM: [alma9, rocky9]
+
+  script:
+    - |
+      set -euo pipefail
+
+      bash "$BUILD_SCRIPT" \
+        "$USD_VERSION" \
+        "$PLATFORM" \
+        "artifacts/$PLATFORM"
+
+      test -s "artifacts/$PLATFORM/OpenUSD_install.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenUSD_build.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenUSD_3rdparty_inst.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenSubdiv.tar.gz"
+
+      echo "OpenUSD $USD_VERSION ($PLATFORM) compiled successfully"
+
   artifacts:
     name: "openusd-${CI_COMMIT_REF_SLUG}-${PLATFORM}"
     paths:
       - artifacts/
     expire_in: 14 days
-
-  parallel:
-    matrix:
-      - PLATFORM: [alma9, rocky9]
-  script:
-    - |
-      set -euo pipefail
-      
-      # Call unified build script
-      "$BUILD_SCRIPT" \
-        --platform "$PLATFORM" \
-        --version "$USD_VERSION" \
-        --output "artifacts"
-      
-      # Report results
-      echo "Build completed for platform: $PLATFORM"
-      test -d "artifacts/$PLATFORM/rez" || exit 1
-
-# Deploy Rez packages to shared location
-deploy_rez_packages:
-  stage: deploy
-  tags:
-    - shell
-  needs:
-    - job: compile_usd
-      artifacts: true
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~ /^\d{2}\.\d{2}\.\d+$/'
-      when: on_success
-
-  script:
-    - |
-      set -euo pipefail
-      
-      # Verify compiled artifacts exist for both platforms
-      test -d "artifacts/alma9/rez" || { echo "ERROR: Missing alma9 Rez packages"; exit 1; }
-      test -d "artifacts/rocky9/rez" || { echo "ERROR: Missing rocky9 Rez packages"; exit 1; }
-      
-      # Create deployment directories
-      mkdir -p "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION"
-      
-      # Deploy Python packages
-      cp -f "artifacts/alma9/rez/python/$PYTHON_VERSION/package.py" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/package.py"
-      
-      # Deploy OpenUSD packages
-      cp -f "artifacts/alma9/rez/openusd/$USD_VERSION/package.py" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/package.py"
-      
-      # Clean and update platform-specific installations
-      rm -rf "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/alma9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/rocky9"
-      rm -rf "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/alma9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/rocky9"
-      
-      cp -a "artifacts/alma9/rez/python/$PYTHON_VERSION/alma9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
-      cp -a "artifacts/rocky9/rez/python/$PYTHON_VERSION/rocky9" "$REZ_DEPLOY_ROOT/python/$PYTHON_VERSION/"
-      cp -a "artifacts/alma9/rez/openusd/$USD_VERSION/alma9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
-      cp -a "artifacts/rocky9/rez/openusd/$USD_VERSION/rocky9" "$REZ_DEPLOY_ROOT/openusd/$USD_VERSION/"
-      
-      echo "Rez packages deployed to $REZ_DEPLOY_ROOT"
