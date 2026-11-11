@@ -23,23 +23,22 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-echo "**********"
-echo "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${VERSION}.tar.gz"
-echo "**********"
-
-
+echo "** Downloading openUSD v${VERSION} **"
 mkdir -p "$WORK/source"
 curl -fL --retry 3 \
- \
+  "https://github.com/PixarAnimationStudios/OpenUSD/archive/refs/tags/v${VERSION}.tar.gz" \
   -o "$WORK/OpenUSD.tar.gz"
+
+echo "** Extracting openUSD v${VERSION} **"
 tar -xzf "$WORK/OpenUSD.tar.gz" --strip-components=1 -C "$WORK/source"
 
+echo "** Building openUSD v${VERSION} **"
 "$PYTHON_BIN" "$WORK/source/build_scripts/build_usd.py" \
   "$WORK/_install" \
   --src "$WORK/_src" --build "$WORK/_build" --inst "$WORK/_inst" \
   --build-variant release --python --usd-imaging --usdview \
   --no-tests --no-examples --no-tutorials --no-docs --no-python-docs \
-  --materialx --embree 2>&1 | tee "$OUTPUT_DIR/build.log"
+  --materialx --embree --no-onetbb 2>&1 | tee "$OUTPUT_DIR/build.log"
 
 # Preserve the four original build artefacts.
 OSD="$WORK/OpenSubdiv"
@@ -54,7 +53,7 @@ done
 [[ -n "$(find "$OSD/lib" -mindepth 1 -maxdepth 1 -print -quit)" ]] || {
   echo 'OpenSubdiv libraries missing' >&2; exit 1;
 }
-
+echo "** Creating artifact archives **"
 tar -C "$WORK" -czf "$OUTPUT_DIR/OpenUSD_install.tar.gz" _install
 tar -C "$WORK" -czf "$OUTPUT_DIR/OpenUSD_build.tar.gz" _build
 tar -C "$WORK" -czf "$OUTPUT_DIR/OpenUSD_3rdparty_inst.tar.gz" _inst

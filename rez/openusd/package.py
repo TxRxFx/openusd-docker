@@ -1,5 +1,5 @@
 name = "openusd"
-version = "25.05.1"
+version = "26.11.1"
 description = "OpenUSD runtime and tools built in CI"
 
 requires = [
@@ -8,24 +8,11 @@ requires = [
 
 variants = [
     ["platform-linux", "arch-x86_64", "os-alma9"],
-    ["platform-linux", "arch-x86_64", "os-rocky9"],
+    ["platform-linux", "arch-x86_64", "os-rocky-9.8"],
 ]
 
-
-def _variant_root():
-    variant_tokens = set(str(token) for token in (this.variant or []))
-
-    if "os-alma9" in variant_tokens:
-        return "{root}/alma9"
-    if "os-rocky9" in variant_tokens:
-        return "{root}/rocky9"
-
-    stop("Unsupported OS variant for openusd package: {}".format(sorted(variant_tokens)))
-
-
 def commands():
-    variant_root = _variant_root()
-    env.PATH.prepend("{}/bin".format(variant_root))
-    env.LD_LIBRARY_PATH.prepend("{}/lib".format(variant_root))
-    env.PYTHONPATH.prepend("{}/lib/python".format(variant_root))
-    env.USD_INSTALL_ROOT.set(variant_root)
+    env.PATH.prepend("{root}/bin")
+    env.LD_LIBRARY_PATH.prepend("{root}/lib")
+    env.PYTHONPATH.prepend("{root}/lib/python")
+    env.USD_INSTALL_ROOT.set("{root}")
