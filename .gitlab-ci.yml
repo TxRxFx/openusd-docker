@@ -36,7 +36,8 @@ compile_usd:
   script:
     - |
       set -euo pipefail
-
+      findmnt -T /mnt/packages/apps/external/python/3.10.14 | echo "Mount path not found"
+      ls -la /mnt/packages/apps/external/python/3.10.14/ | echo "Unable to `ls` path"
       bash "$BUILD_SCRIPT"
       #   "$USD_VERSION" \
       #   "$PLATFORM" \
