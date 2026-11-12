@@ -41,6 +41,7 @@ compile_usd:
       ls -la /
       ls -la /mnt
       ls -la /mnt/packages
+      mount
       bash "$BUILD_SCRIPT"
       findmnt -T /mnt/packages/apps/external/python/3.10.14 | echo "Mount path not found"
       ls -la /mnt/packages | echo "Unable to `ls` path"
