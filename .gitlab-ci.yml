@@ -42,7 +42,7 @@ compile_usd:
       ls -la /mnt
       ls -la /mnt/packages
       echo "*************"
-      ls -la /mnt/packages/apps | echo "Mount path not found"
+      ls -la /mnt/packages/apps/external 
       echo "*************"
       mount
       echo "*************"
