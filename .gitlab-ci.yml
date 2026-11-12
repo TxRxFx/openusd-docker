@@ -31,13 +31,15 @@ compile_usd:
 
   parallel:
     matrix:
-      - PLATFORM: [alma9, rocky9]
+      # - PLATFORM: [alma9, rocky9]
+      - PLATFORM: [rocky9]
 
   script:
     - |
       set -euo pipefail
       echo "*************"
       ls -la /
+      ls -la /mnt
       bash "$BUILD_SCRIPT"
       findmnt -T /mnt/packages/apps/external/python/3.10.14 | echo "Mount path not found"
       ls -la /mnt/packages | echo "Unable to `ls` path"
