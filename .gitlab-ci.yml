@@ -37,19 +37,19 @@ compile_usd:
   script:
     - |
       set -euo pipefail
-      echo "*************"
-      ls -la /
-      ls -la /mnt
-      ls -la /mnt/packages
-      echo "*************"
-      ls -la /mnt/packages/apps/external/python
-      echo "*************"
-      mount
-      echo "*************"
-      bash "$BUILD_SCRIPT"
-      
-      ls -la /mnt/packages | echo "Unable to `ls` path"
-      rez-env --version
+
+      echo "Checking available Python installations..."
+
+      ls -la /mnt/packages/apps/external/
+
+      find /mnt/packages/apps/external/ \
+        -maxdepth 7 \
+        -name python3.10 \
+        -type f \
+        -print
+
+
+      # bash "$BUILD_SCRIPT"      
       echo "*************"
       #   "$USD_VERSION" \
       #   "$PLATFORM" \
