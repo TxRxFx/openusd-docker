@@ -14,11 +14,10 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_BUILDKIT: "1"
-  PYTHON_VERSION: "3.10.14"
-  GCCCORE_VERSION: "12.3.0"
-  PYTHON_PREFIX: "/pipeline/el9/software/Python/${PYTHON_VERSION}-GCCcore-${GCCCORE_VERSION}"
+  PYTHON_VERSION: "3.11.18"
+  PYTHON_PREFIX: "/opt/python/${PYTHON_VERSION}"
   PYTHON_BIN: "${PYTHON_PREFIX}/bin/python"
-  DOCKER_CONTAINER_VER: "1"
+  DOCKER_CONTAINER_VER: "2.2.0"
 
 # The docker authentication elements
 .docker-auth:
@@ -49,7 +48,6 @@ variables:
       docker build \
         --cache-from "$IMAGE" \
         --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
-        --build-arg GCCCORE_VERSION="$GCCCORE_VERSION" \
         -t "$IMAGE" \
         -f "$DOCKERFILE" .
       docker push "$IMAGE"
@@ -61,8 +59,8 @@ build_image:
   extends: .build-image-template
   parallel:
     matrix:
-      - IMAGE_TAG: "alma9"
-        DOCKERFILE: "docker/Dockerfile.alma9"
+      # - IMAGE_TAG: "alma9"
+      #   DOCKERFILE: "docker/Dockerfile.alma9"
       - IMAGE_TAG: "rocky9"
         DOCKERFILE: "docker/Dockerfile.rocky9"
 
