@@ -96,6 +96,9 @@ ENV REZ_ROOT=/opt/rez/current
 ENV PYTHONPATH=/opt/rez/current
 ENV PATH="${PATH}:/opt/rez/current/bin"
 ENV REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
+
+RUN --mount=type=bind,source=/mnt/packages,target=/mnt/packages,readonly
+
 RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0
 RUN ln -sfn /opt/rez/3.5.0 /opt/rez/current
 RUN echo "*****************"
