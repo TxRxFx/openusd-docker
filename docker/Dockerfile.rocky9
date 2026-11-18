@@ -102,7 +102,9 @@ RUN echo "*****************"
 RUN ls -lah /opt/rez/current/bin/
 RUN echo "*****************"
 RUN which rez-env
-RUN rez-search python-3
+# RUN rez-search python-3
+RUN echo "*******"
+RUN cat ${REZ_CONFIG_FILE}
 RUN echo "*******"
 WORKDIR /opt/src
 CMD ["/bin/bash"]
