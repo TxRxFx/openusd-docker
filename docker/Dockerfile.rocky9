@@ -96,13 +96,13 @@ ENV REZ_ROOT=/opt/rez/current
 ENV PYTHONPATH=/opt/rez/current
 ENV PATH="${PATH}:/opt/rez/current/bin"
 ENV REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
-RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0; \
-    ln -sfn /opt/rez/3.5.0 /opt/rez/current; \
-    echo "*****************"; \
-    ls -lah /opt/rez/current/bin/; \
-    echo "*****************"; \
-    which rez-env; \
-    rez-search python-3
+RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0
+RUN ln -sfn /opt/rez/3.5.0 /opt/rez/current
+RUN echo "*****************"
+RUN ls -lah /opt/rez/current/bin/
+RUN echo "*****************"
+RUN which rez-env
+RUN rez-search python-3
 RUN echo "*******"
 WORKDIR /opt/src
 CMD ["/bin/bash"]
