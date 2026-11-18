@@ -48,7 +48,7 @@ variables:
       docker build \
         --cache-from "$IMAGE" \
         --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
-        -v /mnt/packages:/mnt/packages \
+        --build-context packages=/mnt/packages \
         -t "$IMAGE" \
         -f "$DOCKERFILE" .
       docker push "$IMAGE"
