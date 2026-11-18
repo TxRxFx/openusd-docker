@@ -13,7 +13,7 @@ variables:
   USD_VERSION: "${CI_COMMIT_BRANCH}"
   PYTHON_VERSION: "3.10.14"
   GCCCORE_VERSION: "12.3.0"
-  DOCKER_CONTAINER_VER: "1"
+  DOCKER_CONTAINER_VER: "2.2.0"
   BUILD_SCRIPT: "scripts/check_existing_docker_access.sh"
 
 compile_usd:
