@@ -106,7 +106,7 @@ RUN ls -lah /opt/rez/current/
 RUN ls -lah /opt/rez/current/rez/
 RUN ls -lah /opt/rez/current/bin/
 RUN echo "*****************"
-RUN export PYTHONPATH=RUN ls -lah /opt/rez/current
+RUN export PYTHONPATH=/opt/rez/current
 RUN export PATH=$PATH:/opt/rez/current/bin/
 RUN export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 RUN rez-search python-3
