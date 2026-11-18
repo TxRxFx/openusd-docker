@@ -96,8 +96,8 @@ RUN mkdir -p /opt/rez/current
 RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0
 RUN ln -sfn /opt/rez/3.5.0 /opt/rez/current
 RUN export REZ_ROOT=/opt/rez/current
-RUN ls -lah /opt/rez
-RUN ls -lah /opt/rez/current
+RUN ls -lah /opt/rez/3.5.0/
+RUN ls -lah /opt/rez/current/
 RUN export PATH=$PATH:/opt/rez/current/bin
 RUN export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 RUN rez-search python-3
