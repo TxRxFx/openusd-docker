@@ -100,5 +100,5 @@ RUN export PATH=$PATH;/opt/rez/current/bin/
 RUN export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 RUN rez-search python-3
 RUN WORKDIR /opt/src
-
+RUN echo "*******"
 CMD ["/bin/bash"]
