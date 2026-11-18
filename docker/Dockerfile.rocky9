@@ -92,17 +92,18 @@ RUN set -euxo pipefail; \
     # "${PY311_PREFIX}/bin/python" -m pip install --no-cache-dir "Jinja2" "PySide6==6.5.2" "PyOpenGL"; \
     rm -rf /tmp/python-src
 
-RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0
-RUN ln -sfn /opt/rez/3.5.0 /opt/rez/current
-RUN export REZ_ROOT=/opt/rez/current
-RUN echo "*****************"
-RUN ls -lah /opt/rez/current/bin/
-RUN echo "*****************"
-RUN export PYTHONPATH=/opt/rez/current
-RUN export PATH="$PATH:/opt/rez/current/bin/"
-RUN export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
-RUN which rez-env
-RUN rez-search python-3
+RUN python -m pip install rez==3.5.0     --target /opt/rez/3.5.0 \
+    ln -sfn /opt/rez/3.5.0 /opt/rez/current \
+    export REZ_ROOT=/opt/rez/current \
+    echo "*****************" \
+    ls -lah /opt/rez/current/bin/ \
+    echo "*****************" \
+    export PYTHONPATH=/opt/rez/current \
+    export PATH="$PATH:/opt/rez/current/bin/" \
+    export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py \
+    which rez-env \
+    rez-search python-3
+
 RUN WORKDIR /opt/src
 RUN echo "*******"
 CMD ["/bin/bash"]
