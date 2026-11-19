@@ -1,217 +1,117 @@
-# OpenUSD Build Containers
+# OpenUSD Docker Images
 
-Docker build images for compiling OpenUSD from source on AlmaLinux 9 and Rocky Linux 9.
+Docker images used to provide consistent build and Rez environments for OpenUSD on Enterprise Linux 9.
 
-## Quick Start
+This branch is focused on building and publishing the container images. OpenUSD compilation and artifact packaging are performed by downstream jobs that consume the published image; there is no local `build-openusd.sh` workflow in this branch.
 
-Build OpenUSD for AlmaLinux 9:
+## Images
+
+The repository contains Dockerfiles for:
+
+- `docker/Dockerfile.rocky9` - Rocky Linux 9.5 image, currently built by CI
+- `docker/Dockerfile.alma9` - AlmaLinux 9.5 image, available for use but currently disabled in CI
+
+Both Dockerfiles install the GCC 12 toolchain and the native dependencies used by OpenUSD builds, including CMake, Ninja, TBB, Boost, OpenEXR, OpenImageIO, Mesa, and X11 development libraries.
+
+The Rocky Linux image also configures the shared Rez installation:
+
+```text
+REZ_ROOT=/opt/rez/current
+REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
+```
+
+It expects the Rez package mount at `/mnt/packages` when used by a build or test container.
+
+## Building Locally
+
+Build the Rocky Linux image from the repository root:
 
 ```bash
-./scripts/build-openusd.sh --platform alma9 --version 25.05.1 --output ./artifacts
+docker build \
+  --build-arg PYTHON_VERSION=3.10.14 \
+  -t openusd-rocky9 \
+  -f docker/Dockerfile.rocky9 .
 ```
 
-Build OpenUSD for Rocky 9:
+Build the AlmaLinux image instead:
 
 ```bash
-./scripts/build-openusd.sh --platform rocky9 --version 25.05.1 --output ./artifacts
+docker build \
+  --build-arg PYTHON_VERSION=3.10.14 \
+  -t openusd-alma9 \
+  -f docker/Dockerfile.alma9 .
 ```
 
-Show help:
+The Dockerfiles accept build arguments for the OpenUSD version and related tool versions. The defaults currently target:
+
+| Component | Version |
+|-----------|---------|
+| OpenUSD | `25.05.1` |
+| Python | `3.10.14` |
+| GCC toolset | `12` |
+| Rez | `3.5.0` where configured by the image |
+
+## GitLab CI
+
+GitLab CI publishes the container image when changes are pushed to the `docker` branch and one of the Docker build inputs changes:
+
+- `docker/Dockerfile.*`
+- `.gitlab-ci.yml`
+
+The job runs on a self-hosted Linux shell runner and uses Docker BuildKit. It authenticates to the GitLab container registry, pulls the previous image when available for layer caching, builds the image, pushes it, and then runs a smoke test against the shared package mount.
+
+The current matrix enables Rocky Linux only:
+
+```yaml
+IMAGE_TAG: rocky9
+DOCKERFILE: docker/Dockerfile.rocky9
+```
+
+The published image is tagged using this pattern:
+
+```text
+<registry-image>:<platform>-py<PYTHON_VERSION>-v<DOCKER_CONTAINER_VER>
+```
+
+With the current CI variables, the tag ends in `rocky9-py3.10.14-v2.2.0`.
+
+The smoke test mounts `/mnt/packages` read-only, sets `REZ_RELEASE_PACKAGES_PATH=/opt/rez/packages`, and verifies that Rez can query a Python package:
 
 ```bash
-./scripts/build-openusd.sh --help
+rez-config packages_path
+rez-search python-3
 ```
 
-## Overview
+The pipeline is intentionally disabled on `gitlab.com`; it runs only on the project's own GitLab instance.
 
-This project provides:
+## Running the Published Image
 
-- **Unified build script** (`scripts/build-openusd.sh`) – Single orchestration point for all build environments
-- **Docker images** – Pre-configured compilation environments with dependencies
-- **CI/CD integration** – GitLab CI and GitHub Actions workflows using the shared build script
-- **Rez packaging** – Relocatable Python and OpenUSD packages with platform variants
-
-**Key components:**
-- OpenUSD 25.05.1
-- Python 3.10.14 (compiled from source)
-- GCC 12.3.0 via gcc-toolset-12
-- AlmaLinux 9 & Rocky 9 Linux
-
-## Build Script
-
-The unified build script (`scripts/build-openusd.sh`) automates the complete build process:
+After authenticating to the project's container registry, run the image with the package repository mounted:
 
 ```bash
-./scripts/build-openusd.sh \
-  --platform alma9              # Required: alma9 or rocky9
-  --version 25.05.1             # Required: YY.MM.patch format
-  --output ./artifacts          # Required: output directory
-  [--skip-image-build]          # Optional: reuse existing Docker image
-  [--dry-run]                   # Optional: show commands without executing
+docker run --rm -it \
+  -v /mnt/packages:/mnt/packages:ro \
+  -e REZ_RELEASE_PACKAGES_PATH=/opt/rez/packages \
+  <published-image> \
+  bash
 ```
 
-### Artifacts
+Inside the container, `/opt/src` is the working directory and the configured Python and Rez tools are available to downstream build workflows.
 
-Each platform produces:
+## Repository Layout
 
-```
-artifacts/
-└── alma9/
-    ├── OpenUSD_install_25.05.1_alma9.tar.gz      # Runtime + development
-    ├── OpenUSD_build_25.05.1_alma9.tar.gz        # Build artifacts for debugging
-    ├── OpenUSD_3rdparty_25.05.1_alma9.tar.gz     # Third-party dependencies
-    ├── Python_3.10.14_alma9.tar.gz               # Python runtime
-    ├── build.log                                  # Build output
-    ├── manifest.json                              # Build metadata & checksums
-    └── rez/
-        ├── python/3.10.14/alma9/
-        └── openusd/25.05.1/alma9/
-```
-
-| Artifact | Purpose |
-|----------|---------|
-| `OpenUSD_install_*` | Runtime and development files |
-| `OpenUSD_build_*` | Intermediate build artifacts (debugging) |
-| `OpenUSD_3rdparty_*` | Dependencies (TBB, Boost, OpenEXR, etc.) |
-| `Python_*` | Python 3.10.14 runtime |
-| `build.log` | OpenUSD build output |
-| `manifest.json` | Build info, versions, SHA-256 checksums |
-| `rez/` | Rez package structures |
-
-## Build Environment
-
-### Dockerfiles
-
-- `docker/Dockerfile.alma9` – AlmaLinux 9.5 base with all dependencies
-- `docker/Dockerfile.rocky9` – Rocky Linux 9.5 base with all dependencies
-
-Both include:
-- GCC 12.x via gcc-toolset-12
-- Python 3.10.14 (compiled from source to `/pipeline/el9/software/Python/3.10.14-GCCcore-12.3.0/`)
-- Build tools (cmake, ninja, git, pkgconfig)
-- Core dependencies (TBB, Boost, OpenEXR, OpenImageIO, GL/X11, Mesa)
-- Python packages (Jinja2, PySide6 6.5.2, PyOpenGL)
-
-### OpenUSD Build Configuration
-
-The build script uses these OpenUSD flags:
-
-```bash
---build-variant release   # Optimized build
---python                  # Python bindings
---usdview                 # Interactive viewer
---no-tests                # Exclude tests
---no-examples             # Exclude examples
---no-tutorials            # Exclude tutorials
---no-docs                 # Exclude documentation
---no-python-docs          # Exclude Python documentation
-```
-
-## CI/CD Pipelines
-
-### GitLab CI
-
-GitLab CI invokes the build script for version branch pushes.
-
-**Stages:**
-1. **compile** – Parallel builds for alma9 and rocky9
-2. **deploy** – Copies Rez packages to `/pipeline/el9/rez-packages`
-
-**Trigger:** Version branches matching `^\d{2}\.\d{2}\.\d+$`
-
-**Configuration:**
-- Artifacts retained for 14 days
-- Self-hosted Docker runner required
-- Rez deployment to shared filesystem
-
-### GitHub Actions
-
-GitHub Actions invokes the build script for version branch pushes or manual trigger.
-
-**Jobs:**
-1. **compile-usd** – Parallel builds for alma9 and rocky9
-
-**Triggers:**
-- Push to version branch (e.g., `25.05.1`)
-- Manual workflow dispatch
-
-**Configuration:**
-- Artifacts retained for 14 days (GitHub Actions storage)
-- Self-hosted Linux runner required
-- No external registry deployment
-
-## Requirements
-
-### Host System
-
-- OS: Linux (AlmaLinux 9, Rocky 9, or compatible)
-- Bash 4.0+
-- Docker Engine (recent version)
-- Disk: 100GB+ free
-- Memory: 16GB minimum (8GB possible but slower)
-- Network: Internet access for downloads
-
-### Docker Access
-
-```bash
-# Verify Docker is accessible
-docker ps   # Should succeed without sudo
-```
-
-If needed:
-```bash
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "Docker not found" | Install: `curl https://get.docker.com \| bash` |
-| "Docker daemon not running" | Start: `sudo systemctl start docker` |
-| "Invalid version format" | Use `YY.MM.patch` (e.g., `25.05.1` not `v25.05.1`) |
-| Build timeout | Increase `timeout-minutes` in CI config or upgrade hardware |
-| Incomplete artifacts | Check: `cat artifacts/alma9/manifest.json \| jq` |
-
-## Rez Package Management
-
-The build script generates Rez packages for relocatable Python and OpenUSD installations.
-
-### Package Structure
-
-Rez packages support OS variants (alma9, rocky9):
-
-```bash
-# Request Python for current platform
-rez env python-3.10.14
-
-# Request OpenUSD with Python dependency
-rez env openusd-25.05.1
-
-# Request specific OS variant
-rez env python-3.10.14 os-alma9
-```
-
-Both `rez/python/package.py` and `rez/openusd/package.py` are included in the artifacts and should be deployed alongside the platform-specific installations.
-
-## File Structure
-
-```
+```text
 .
-├── .github/workflows/build.yml     # GitHub Actions
-├── .gitlab-ci.yml                  # GitLab CI
-├── docker/Dockerfile.alma9         # AlmaLinux 9 image
-├── docker/Dockerfile.rocky9        # Rocky Linux 9 image
-├── rez/python/package.py           # Python Rez package
-├── rez/openusd/package.py          # OpenUSD Rez package
-├── scripts/build-openusd.sh        # Unified build script
-├── README.md                        # This file
-└── artifacts/                      # Generated at runtime
+├── .gitlab-ci.yml              # Image build and publication pipeline
+├── docker/
+│   ├── Dockerfile.alma9       # AlmaLinux 9.5 image
+│   └── Dockerfile.rocky9      # Rocky Linux 9.5 image
+├── ARCHITECTURE.md             # Design and CI notes
+└── README.md                   # This file
 ```
 
 ## Attribution
 
 - **OpenUSD:** [Pixar Animation Studios](https://openusd.org)
 - **Python:** [Python Software Foundation](https://python.org)
-- **Base images:** [AlmaLinux](https://almalinux.org), [Rocky Linux](https://rockylinux.org)
+- **Base images:** [AlmaLinux](https://almalinux.org) and [Rocky Linux](https://rockylinux.org)
