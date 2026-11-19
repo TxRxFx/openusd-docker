@@ -78,7 +78,7 @@ ENV PATH="/opt/rez/current/bin/rez:${PATH}"
 
 # Verify Rez installation accessible
 RUN rez --version
-RUN echo "************************"
+RUN echo "***********************"
 
 WORKDIR /opt/src
 
