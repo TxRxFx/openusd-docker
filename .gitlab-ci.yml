@@ -58,6 +58,8 @@ variables:
       docker push "$IMAGE"
 
       # Test image has access to network mount
+      echo "*******************"
+      echo "** Testing Image **"
       docker run --rm \
         -v /mnt/packages:/mnt/packages:ro \
         "$IMAGE" \
