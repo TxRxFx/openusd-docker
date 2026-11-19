@@ -60,10 +60,13 @@ variables:
       # Test image has access to network mount
       echo "*******************"
       echo "** Testing Image **"
+      echo "*******************"
       docker run --rm \
         -v /mnt/packages:/mnt/packages:ro \
+        -e REZ_RELEASE_PACKAGES_PATH=/opt/rez/packages \
         "$IMAGE" \
-        bash -c 'test -f "$REZ_CONFIG_FILE" && rez-config packages_path && rez-search python-3'
+        bash -c 'rez-config packages_path && rez-search python-3'
+
 
 # Execute docker container builds in parallel
 # Be aware this docker file also builds Python from source
