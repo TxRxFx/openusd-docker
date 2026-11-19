@@ -43,15 +43,25 @@ variables:
         - .gitlab-ci.yml
   script:
     - |
+      # Set IMAGE and check for existing to update
       IMAGE="${CI_REGISTRY_IMAGE}:${IMAGE_TAG}-py${PYTHON_VERSION}-v${DOCKER_CONTAINER_VER}"
       docker pull "$IMAGE" || echo "No existing image"
+
+      # Build Image
       docker build \
         --cache-from "$IMAGE" \
         --build-arg PYTHON_VERSION="$PYTHON_VERSION" \
-        --build-context packages=/mnt/packages \
         -t "$IMAGE" \
         -f "$DOCKERFILE" .
+
+      # Push image``
       docker push "$IMAGE"
+
+      # Test image has access to network mount
+      docker run --rm \
+        -v /mnt/packages:/mnt/packages:ro \
+        "$IMAGE" \
+        bash -c 'test -f "$REZ_CONFIG_FILE" && rez-config packages_path && rez-search python-3'
 
 # Execute docker container builds in parallel
 # Be aware this docker file also builds Python from source
