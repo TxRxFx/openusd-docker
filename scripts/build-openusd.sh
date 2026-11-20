@@ -10,6 +10,9 @@ OUTPUT_DIR="${3:?Missing output directory}"
 # case "$PLATFORM" in alma9|rocky9) ;; *) echo "Invalid platform: $PLATFORM" >&2; exit 1 ;; esac
 
 PYTHON_VERSION="${PYTHON_VERSION:-3.10.14}"
+echo "*** WHICH PYTHON ***"
+which python
+echo "*** THIS PYTHON ***"
 PYTHON_BIN="${PYTHON_BIN:-/opt/python/${PYTHON_VERSION}/bin/python}"
 
 source /opt/rh/gcc-toolset-12/enable
