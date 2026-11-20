@@ -36,12 +36,15 @@ compile_usd:
   script:
     - |
       set -euo pipefail
-      rez-search python-3.10
-      rez-env python-3.10.14 jinja2 pyopengl pyside6 -- bash "$BUILD_SCRIPT"      
       echo "**************"
-        "$USD_VERSION" \
+      rez-search python-3.10
+      echo "**************"
+      rez-env python-3.10.14 jinja2 pyopengl pyside6 -- bash "$BUILD_SCRIPT" \
+          "$USD_VERSION" \
         "$PLATFORM" \
         "artifacts/$PLATFORM"
+
+      echo "**************"
 
       test -s "artifacts/$PLATFORM/OpenUSD_install.tar.gz"
       test -s "artifacts/$PLATFORM/OpenUSD_build.tar.gz"
