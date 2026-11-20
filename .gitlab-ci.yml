@@ -64,6 +64,7 @@ variables:
       docker run --rm \
         -v /mnt/packages:/mnt/packages:ro \
         -v /opt/rez/current:/opt/rez/current:ro \
+        -v /opt/rez/3.3.0:/opt/rez/3.3.0:ro \
         -e REZ_RELEASE_PACKAGES_PATH=/opt/rez/packages \
         "$IMAGE" \
         bash -c 'rez-config packages_path && rez-search python-3'

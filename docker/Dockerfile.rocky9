@@ -75,7 +75,6 @@ ENV REZ_ROOT=/opt/rez/current
 ENV PYTHONPATH=/opt/rez/current
 ENV REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 ENV PATH="/opt/rez/current/bin/rez:${PATH}"
-
 WORKDIR /opt/src
 
 CMD ["/bin/bash"]
