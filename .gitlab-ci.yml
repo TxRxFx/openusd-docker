@@ -38,7 +38,7 @@ compile_usd:
       set -euo pipefail
       # rez-search python-3.10
       bash "$BUILD_SCRIPT"      
-      echo "*************"
+      echo "**************"
       #   "$USD_VERSION" \
       #   "$PLATFORM" \
       #   "artifacts/$PLATFORM"
