@@ -20,7 +20,7 @@ which rez-search || echo "failed to seek rez-search"
 echo "*****"
 rez-search python-3.10
 rez-search jinja2
-rez-search pyopenGL
+rez-search pyopengl
 rez-search pyside6
 echo "*****"
 # bash "$BUILD_SCRIPT"
