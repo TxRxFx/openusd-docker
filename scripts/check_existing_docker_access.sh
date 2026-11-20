@@ -16,7 +16,7 @@ export REZ_ROOT=/opt/rez/current
 export PYTHONPATH=/opt/rez/current
 export REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 export PATH="/opt/rez/current/bin/rez:${PATH}"
-
+which rez-search || echo "failed to seek rez-search"
 echo "*****"
 rez-search python-3.10
 echo "*****"
