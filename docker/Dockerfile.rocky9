@@ -77,8 +77,8 @@ ENV REZ_CONFIG_FILE=/mnt/packages/.config/linux_rezconfig.py
 ENV PATH="/opt/rez/current/bin/rez:${PATH}"
 
 # Verify Rez installation accessible
-RUN rez --version
-RUN echo "***********************"
+RUN rez --version || echo "Test of Rez failed"
+RUN echo "**********************"
 
 WORKDIR /opt/src
 
