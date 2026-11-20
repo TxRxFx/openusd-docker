@@ -36,7 +36,7 @@ compile_usd:
   script:
     - |
       set -euo pipefail
-      rez-search python-3.10
+      # rez-search python-3.10
       bash "$BUILD_SCRIPT"      
       echo "*************"
       #   "$USD_VERSION" \
