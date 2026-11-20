@@ -13,7 +13,7 @@ variables:
   USD_VERSION: "${CI_COMMIT_BRANCH}"
   PYTHON_VERSION: "3.10.14"
   DOCKER_CONTAINER_VER: "2.2.0"
-  BUILD_SCRIPT: "scripts/check_existing_docker_access.sh"
+  BUILD_SCRIPT: "scripts/build-openusd.sh"
 
 compile_usd:
   stage: compile
@@ -36,19 +36,19 @@ compile_usd:
   script:
     - |
       set -euo pipefail
-      # rez-search python-3.10
-      bash "$BUILD_SCRIPT"      
+      rez-search python-3.10
+      rez-env python-3.10.14 jinja2 pyopengl pyside6 -- bash "$BUILD_SCRIPT"      
       echo "**************"
-      #   "$USD_VERSION" \
-      #   "$PLATFORM" \
-      #   "artifacts/$PLATFORM"
+        "$USD_VERSION" \
+        "$PLATFORM" \
+        "artifacts/$PLATFORM"
 
-      # test -s "artifacts/$PLATFORM/OpenUSD_install.tar.gz"
-      # test -s "artifacts/$PLATFORM/OpenUSD_build.tar.gz"
-      # test -s "artifacts/$PLATFORM/OpenUSD_3rdparty_inst.tar.gz"
-      # test -s "artifacts/$PLATFORM/OpenSubdiv.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenUSD_install.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenUSD_build.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenUSD_3rdparty_inst.tar.gz"
+      test -s "artifacts/$PLATFORM/OpenSubdiv.tar.gz"
 
-      # echo "OpenUSD $USD_VERSION ($PLATFORM) compiled successfully"
+      echo "OpenUSD $USD_VERSION ($PLATFORM) compiled successfully"
 
   artifacts:
     name: "openusd-${CI_COMMIT_REF_SLUG}-${PLATFORM}"
