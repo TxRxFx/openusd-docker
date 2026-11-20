@@ -13,7 +13,8 @@ PYTHON_VERSION="${PYTHON_VERSION:-3.10.14}"
 echo "*** WHICH PYTHON ***"
 which python
 echo "*** THIS PYTHON ***"
-PYTHON_BIN="${PYTHON_BIN:-/opt/python/${PYTHON_VERSION}/bin/python}"
+PYTHON_BIN=$(which python)
+# PYTHON_EXECUTABLE=$(which python)
 
 source /opt/rh/gcc-toolset-12/enable
 [[ -x "$PYTHON_BIN" ]] || { echo "Missing Python: $PYTHON_BIN" >&2; exit 1; }
